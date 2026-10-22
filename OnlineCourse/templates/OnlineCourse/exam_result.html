@@ -1,0 +1,143 @@
+{% extends "OnlineCourse/base.html" %}
+
+{% block title %}Exam Results - {{ course.name }} - OnlineCourse{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'OnlineCourse:popular_course_list' %}">Courses</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'OnlineCourse:course_details' course.id %}">{{ course.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Exam Results</li>
+    </ol>
+</nav>
+
+{% if error_message %}
+    <div class="alert alert-danger py-4 rounded-4 shadow-sm text-center">
+        <i class="bi bi-exclamation-triangle-fill fs-2 d-block mb-2"></i>
+        <h4 class="alert-heading fw-bold">Error</h4>
+        <p class="mb-0">{{ error_message }}</p>
+    </div>
+{% else %}
+    <!-- Result Header / Banner -->
+    <div class="card shadow-sm border-0 rounded-4 overflow-hidden mb-4">
+        {% if is_success %}
+            <!-- Success Banner with Exact Word Congratulations -->
+            <div class="card-body p-4 p-md-5 bg-success-subtle border-start border-success border-5 text-center">
+                <span class="badge bg-success fs-6 px-4 py-2 rounded-pill mb-3">
+                    <i class="bi bi-patch-check-fill me-1"></i> Exam Passed
+                </span>
+                <h1 class="display-5 fw-bold text-success mb-3">
+                    <i class="bi bi-trophy-fill text-warning me-2"></i>Congratulations!
+                </h1>
+                <p class="lead text-dark mb-4">
+                    Congratulations on passing the <strong>{{ course.name }}</strong> mock exam! You demonstrated a comprehensive understanding of the course material.
+                </p>
+                <div class="d-inline-block bg-white p-4 rounded-4 shadow-sm border">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">Your Total Calculated Score</div>
+                    <div class="display-4 fw-bold text-success mb-1">
+                        {{ actual_score }} / {{ total_possible_score }}
+                    </div>
+                    <div class="h5 text-secondary mb-0">Percentage: <strong>{{ percentage }}%</strong></div>
+                </div>
+            </div>
+        {% else %}
+            <!-- Failure / Needs Improvement Banner -->
+            <div class="card-body p-4 p-md-5 bg-warning-subtle border-start border-warning border-5 text-center">
+                <span class="badge bg-warning text-dark fs-6 px-4 py-2 rounded-pill mb-3">
+                    <i class="bi bi-arrow-repeat me-1"></i> Attempt Needs Review
+                </span>
+                <h1 class="display-6 fw-bold text-dark mb-3">Keep Practicing!</h1>
+                <p class="lead text-secondary mb-4">
+                    You scored below the 70% passing threshold for <strong>{{ course.name }}</strong>. Review the question breakdown below and try again.
+                </p>
+                <div class="d-inline-block bg-white p-4 rounded-4 shadow-sm border">
+                    <div class="text-uppercase text-muted small fw-bold mb-1">Your Total Calculated Score</div>
+                    <div class="display-5 fw-bold text-danger mb-1">
+                        {{ actual_score }} / {{ total_possible_score }}
+                    </div>
+                    <div class="h5 text-secondary mb-0">Percentage: <strong>{{ percentage }}%</strong></div>
+                </div>
+            </div>
+        {% endif %}
+    </div>
+
+    <!-- Exam Results Question-by-Question Breakdown -->
+    <div class="card shadow-sm border-0 rounded-4 mb-4">
+        <div class="card-header bg-white py-3 px-4 border-bottom d-flex justify-content-between align-items-center">
+            <h3 class="h4 fw-bold mb-0 text-dark">
+                <i class="bi bi-card-checklist text-primary me-2"></i> Detailed Exam Results
+            </h3>
+            <span class="badge bg-light text-dark border px-3 py-2 rounded-pill">
+                {{ question_results|length }} Questions Evaluated
+            </span>
+        </div>
+        <div class="card-body p-4">
+            {% for item in question_results %}
+                <div class="card mb-4 border rounded-3 overflow-hidden shadow-sm">
+                    <div class="card-header py-3 px-4 d-flex justify-content-between align-items-center {% if item.is_correct %}bg-success-subtle text-success-emphasis{% else %}bg-danger-subtle text-danger-emphasis{% endif %}">
+                        <span class="fw-bold">
+                            Question {{ forloop.counter }}: {{ item.question.question_text }}
+                        </span>
+                        <div>
+                            {% if item.is_correct %}
+                                <span class="badge bg-success px-3 py-2 rounded-pill">
+                                    <i class="bi bi-check-circle-fill me-1"></i> Correct (+{{ item.question.grade }} Pt{% if item.question.grade > 1 %}s{% endif %})
+                                </span>
+                            {% else %}
+                                <span class="badge bg-danger px-3 py-2 rounded-pill">
+                                    <i class="bi bi-x-circle-fill me-1"></i> Incorrect (0 Pts)
+                                </span>
+                            {% endif %}
+                        </div>
+                    </div>
+                    <div class="card-body p-4">
+                        <h6 class="text-muted small text-uppercase fw-bold mb-3">Choice Evaluation:</h6>
+                        <div class="list-group">
+                            {% for choice in item.choices %}
+                                <div class="list-group-item d-flex justify-content-between align-items-center py-3 {% if choice.is_selected and choice.is_correct %}bg-success-subtle border-success{% elif choice.is_selected and not choice.is_correct %}bg-danger-subtle border-danger{% elif choice.is_correct %}bg-light border-success{% endif %}">
+                                    <div class="d-flex align-items-center">
+                                        {% if choice.is_selected %}
+                                            <i class="bi bi-check-square-fill text-primary me-3 fs-5"></i>
+                                        {% else %}
+                                            <i class="bi bi-square text-muted me-3 fs-5"></i>
+                                        {% endif %}
+                                        <span class="{% if choice.is_correct %}fw-bold text-dark{% else %}text-muted{% endif %}">
+                                            {{ choice.text }}
+                                        </span>
+                                    </div>
+                                    <div>
+                                        {% if choice.is_selected and choice.is_correct %}
+                                            <span class="badge bg-success rounded-pill px-3 py-2">
+                                                <i class="bi bi-check2-all me-1"></i> Your Choice (Correct)
+                                            </span>
+                                        {% elif choice.is_selected and not choice.is_correct %}
+                                            <span class="badge bg-danger rounded-pill px-3 py-2">
+                                                <i class="bi bi-x-lg me-1"></i> Your Choice (Incorrect)
+                                            </span>
+                                        {% elif choice.is_correct %}
+                                            <span class="badge bg-success-subtle text-success border border-success-subtle rounded-pill px-3 py-2">
+                                                Correct Answer
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+                </div>
+            {% endfor %}
+        </div>
+    </div>
+
+    <!-- Action Buttons -->
+    <div class="text-center mb-5">
+        <a href="{% url 'OnlineCourse:mock_exam' course.id %}" class="btn btn-primary btn-lg px-4 py-3 rounded-pill me-2 shadow-sm">
+            <i class="bi bi-arrow-repeat me-2"></i> Retake Mock Exam
+        </a>
+        <a href="{% url 'OnlineCourse:course_details' course.id %}" class="btn btn-outline-secondary btn-lg px-4 py-3 rounded-pill">
+            <i class="bi bi-arrow-left me-2"></i> Back to Course Details
+        </a>
+    </div>
+{% endif %}
+{% endblock %}

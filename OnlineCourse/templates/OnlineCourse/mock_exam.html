@@ -1,0 +1,89 @@
+{% extends "OnlineCourse/base.html" %}
+
+{% block title %}Mock Exam: {{ course.name }} - OnlineCourse{% endblock %}
+
+{% block content %}
+<!-- Breadcrumb Navigation -->
+<nav aria-label="breadcrumb" class="mb-4">
+    <ol class="breadcrumb">
+        <li class="breadcrumb-item"><a href="{% url 'OnlineCourse:popular_course_list' %}">Courses</a></li>
+        <li class="breadcrumb-item"><a href="{% url 'OnlineCourse:course_details' course.id %}">{{ course.name }}</a></li>
+        <li class="breadcrumb-item active" aria-current="page">Mock Exam</li>
+    </ol>
+</nav>
+
+<!-- Exam Instructions Header -->
+<div class="card shadow-sm border-0 rounded-4 mb-4">
+    <div class="card-body p-4 p-md-5 bg-white border-start border-primary border-5 rounded-4">
+        <div class="d-flex justify-content-between align-items-center flex-wrap gap-2 mb-3">
+            <span class="badge bg-primary fs-6 px-3 py-2 rounded-pill">Final Assessment</span>
+            <span class="badge bg-info-subtle text-info-emphasis border border-info-subtle px-3 py-2 rounded-pill">
+                <i class="bi bi-clock me-1"></i> Passing Score: 70%
+            </span>
+        </div>
+        <h1 class="display-6 fw-bold text-dark mb-2">Mock Exam: {{ course.name }}</h1>
+        <p class="text-secondary mb-0">
+            Please answer all questions below carefully. For each question, select all appropriate choices. Once you have made your selections, click the <strong>Submit Exam</strong> button at the bottom to calculate your final score.
+        </p>
+    </div>
+</div>
+
+<!-- Exam Questions Form -->
+<form action="{% url 'OnlineCourse:submit' course.id %}" method="post" id="examForm">
+    {% csrf_token %}
+    
+    {% for question in questions %}
+        <div class="card shadow-sm border-0 rounded-4 mb-4">
+            <div class="card-header bg-light py-3 px-4 d-flex justify-content-between align-items-center">
+                <span class="fw-bold text-primary">
+                    <i class="bi bi-question-circle-fill me-2"></i>Question {{ forloop.counter }} of {{ questions|length }}
+                </span>
+                <span class="badge bg-secondary-subtle text-secondary-emphasis border px-3 py-1 rounded-pill">
+                    {{ question.grade }} Point{% if question.grade > 1 %}s{% endif %}
+                </span>
+            </div>
+            <div class="card-body p-4">
+                <h5 class="card-title fw-semibold text-dark mb-3">
+                    {{ question.question_text }}
+                </h5>
+                <div class="choices-container mt-3">
+                    {% for choice in question.choices.all %}
+                        <div class="form-check p-3 mb-2 rounded-3 border bg-white hover-shadow transition">
+                            <input class="form-check-input ms-0 me-3" 
+                                   type="checkbox" 
+                                   name="choice_{{ question.id }}" 
+                                   id="choice_{{ choice.id }}" 
+                                   value="{{ choice.id }}">
+                            <label class="form-check-label w-100 cursor-pointer fw-normal text-dark" for="choice_{{ choice.id }}">
+                                {{ choice.choice_text }}
+                            </label>
+                        </div>
+                    {% empty %}
+                        <p class="text-muted fst-italic">No answer choices configured for this question.</p>
+                    {% endfor %}
+                </div>
+            </div>
+        </div>
+    {% empty %}
+        <div class="alert alert-warning text-center py-5 rounded-4 shadow-sm" role="alert">
+            <i class="bi bi-exclamation-circle-fill fs-2 d-block mb-3 text-warning"></i>
+            <h4 class="alert-heading fw-bold">No Questions Configured</h4>
+            <p class="mb-0">There are no exam questions available for this course yet.</p>
+        </div>
+    {% endfor %}
+
+    {% if questions %}
+        <!-- Submit Button Section -->
+        <div class="card shadow-sm border-0 rounded-4 p-4 text-center bg-white mb-5">
+            <div class="d-flex justify-content-center gap-3 flex-wrap">
+                <button type="submit" class="btn btn-primary btn-lg px-5 py-3 rounded-pill fw-bold shadow">
+                    <i class="bi bi-check2-circle me-2"></i> Submit Exam
+                </button>
+                <a href="{% url 'OnlineCourse:course_details' course.id %}" class="btn btn-outline-secondary btn-lg px-4 py-3 rounded-pill">
+                    <i class="bi bi-x-circle me-2"></i> Cancel
+                </a>
+            </div>
+        </div>
+    {% endif %}
+</form>
+{% endblock %}
